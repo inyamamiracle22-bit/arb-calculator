@@ -17,7 +17,7 @@ func page(w http.ResponseWriter, r *http.Request) {
 <style>
 	body {
 		font-family: Arial;
-		background: #0b1220;
+		background: #0d0b20ff;
 		color: white;
 		display: flex;
 		justify-content: center;
