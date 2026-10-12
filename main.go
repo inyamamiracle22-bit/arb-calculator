@@ -1,10 +1,15 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 )
+
+//go:embed static/*
+var static embed.FS
 
 func page(w http.ResponseWriter, r *http.Request) {
 
@@ -13,6 +18,9 @@ func page(w http.ResponseWriter, r *http.Request) {
 <head>
 <title>Arb Calculator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0b20">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 
 <style>
 	body {
@@ -291,6 +299,16 @@ function clearAll() {
 
 </script>
 
+<script>
+if ("serviceWorker" in navigator) {
+	window.addEventListener("load", () => {
+		navigator.serviceWorker.register("/sw.js").catch(error => {
+			console.error("Offline support could not be enabled:", error)
+		})
+	})
+}
+</script>
+
 </body>
 </html>`)
 }
@@ -301,6 +319,14 @@ func main() {
 		port = "8080"
 	}
 
+	staticFiles, err := fs.Sub(static, "static")
+	if err != nil {
+		fmt.Println("Unable to load app assets:", err)
+		os.Exit(1)
+	}
+	http.Handle("/sw.js", http.FileServer(http.FS(staticFiles)))
+	http.Handle("/manifest.webmanifest", http.FileServer(http.FS(staticFiles)))
+	http.Handle("/icon.svg", http.FileServer(http.FS(staticFiles)))
 	http.HandleFunc("/", page)
 
 	fmt.Println("Server running on port", port)
